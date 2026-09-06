@@ -32,10 +32,15 @@ HISTOGRAM_REGISTRY = {
 }
 
 class Output:
-    def __init__(self, bins, histograms, branches, trees, responses):
+    def __init__(self, bins, histograms, branches, trees, responses, split = False):
         self.logger = set_up_logger(__name__)
         self._bins_init_done = False
         self.names = []
+        self.logger.info(f"Output split copies: {split}")
+        if split:
+            self.splits = ["1_", "2_"]
+        else:
+            self.splits = [""]
         self.logger.info("Initializing histograms...", stacklevel = 2)
         self._init_bins(bins)
         self._init_histograms(histograms)
@@ -60,7 +65,7 @@ class Output:
         if "output" not in cfg:
             raise KeyError("Output must be configured in a 'output' block in the YAML configuration!")
         if cfg["output"] is None:
-            raise KeyError("The 'output' block in the YAML configuration cannot be empty!")
+            raise KeyError("The 'output' block in the YAML configuration cannot be empty, remove or fill it!")
 
         cfg_output = {}
         fields = ["bins", "histograms", "branches", "trees", "responses"]
@@ -69,6 +74,9 @@ class Output:
                 cfg_output[field] = {}
             else:
                 cfg_output[field] = cfg["output"][field]
+        if "split" in cfg["output"]:
+            cfg_output["split"] = cfg["output"]["split"]
+        # if split not in config, let it be unset and use the default value
 
         return cls(**cfg_output)
     @load.register(str)
@@ -102,14 +110,18 @@ class Output:
     def _init_histograms(self, hists_cfg):
         self.hists = {}
         # for now, doesn't support nested structures, but could in the future
-        for tag, cfg in hists_cfg.items():
-            htype, name, title, *bin_names = cfg
-            self._validate_bin_names(bin_names)
-            # interlace number of bins and bin arrays for each axis
-            binnings = [val for name in bin_names for val in (self._nbins[name], self._bins[name])]
-            root_hist_cls = HISTOGRAM_REGISTRY[htype]
-            self.hists[tag] = root_hist_cls(name, title, *binnings)
-            self.names.append(name)
+        for split in self.splits:
+            for tag, cfg in hists_cfg.items():
+                htype, name, title, *bin_names = cfg
+                self._validate_bin_names(bin_names)
+                tag = split + tag
+                name = split + name
+                title = split + title
+                # interlace number of bins and bin arrays for each axis
+                binnings = [val for name in bin_names for val in (self._nbins[name], self._bins[name])]
+                root_hist_cls = HISTOGRAM_REGISTRY[htype]
+                self.hists[tag] = root_hist_cls(name, title, *binnings)
+                self.names.append(name)
         self._check_for_duplicates()
 
     def _validate_bin_names(self, bin_names):
@@ -128,24 +140,28 @@ class Output:
 
     def _init_responses(self, responses_cfg):
         self.responses = {}
-        for tag, cfg in responses_cfg.items():
-            rtype, name, title, *bin_names = cfg
-            self._validate_bin_names(bin_names)
-            # interlace number of bins and bin arrays for each axis
-            if len(bin_names) % 2 != 0:
-                raise ValueError("Number of axes defined in this response matrix is not even!")
-            ndims = len(bin_names) // 2
-            root_hist_cls = HISTOGRAM_REGISTRY[rtype]
+        for split in self.splits:
+            for tag, cfg in responses_cfg.items():
+                rtype, name, title, *bin_names = cfg
+                self._validate_bin_names(bin_names)
+                tag = split + tag
+                name = split + name
+                title = split + title
+                # interlace number of bins and bin arrays for each axis
+                if len(bin_names) % 2 != 0:
+                    raise ValueError("Number of axes defined in this response matrix is not even!")
+                ndims = len(bin_names) // 2
+                root_hist_cls = HISTOGRAM_REGISTRY[rtype]
 
-            helper_det_name = f"{name}_helper_det"
-            binnings_det = [val for name in bin_names[:ndims] for val in (self._nbins[name], self._bins[name])]
-            helper_hist_det = root_hist_cls(helper_det_name, helper_det_name, *binnings_det)
-            helper_gen_name = f"{name}_helper_gen"
-            binnings_gen = [val for name in bin_names[ndims:] for val in (self._nbins[name], self._bins[name])]
-            helper_hist_gen = root_hist_cls(helper_gen_name, helper_gen_name, *binnings_gen)
+                helper_det_name = f"{name}_helper_det"
+                binnings_det = [val for name in bin_names[:ndims] for val in (self._nbins[name], self._bins[name])]
+                helper_hist_det = root_hist_cls(helper_det_name, helper_det_name, *binnings_det)
+                helper_gen_name = f"{name}_helper_gen"
+                binnings_gen = [val for name in bin_names[ndims:] for val in (self._nbins[name], self._bins[name])]
+                helper_hist_gen = root_hist_cls(helper_gen_name, helper_gen_name, *binnings_gen)
 
-            self.responses[tag] = RooUnfoldResponse(helper_hist_det, helper_hist_gen, name, title)
-            self.names.append(name)
+                self.responses[tag] = RooUnfoldResponse(helper_hist_det, helper_hist_gen, name, title)
+                self.names.append(name)
         self._check_for_duplicates()
 
     def _check_for_duplicates(self):

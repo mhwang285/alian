@@ -1,0 +1,36 @@
+# Event cuts
+selections:
+  event:
+    event_sel: selMC
+    rct: CBT
+  track:
+    pt_min: 0.150
+    track_sel: globalTrack
+
+# remove the jet_finder section below if jets are not needed in analysis
+jet_finder:
+  R: 0.4
+  alg: antikt
+  pT_min: 10
+
+analysis:
+  pt_min_eec: 1.0
+
+output:
+  split: true
+  bins:
+    jet_pT: ['lin', 10, 150, 14]
+    # RL: ['log', 1.0e-2, 0.4, 20]
+    # ew: ['log', 3.0e-5, 1, 8]
+  histograms:
+    # define histograms with bins described in `bins`
+    jet_pT_det: [1, "jet_pT_det", "Det. jet #it{p}_{T} spectrum;det. jet #it{p}_{T} (GeV);Counts", jet_pT]
+    jet_pT_gen: [1, "jet_pT_gen", "Gen. jet #it{p}_{T} spectrum;gen. jet #it{p}_{T} (GeV);Counts", jet_pT]
+    jet_pT_det_matched: [1, "jet_pT_det_matched", "Matched det. jet #it{p}_{T} spectrum;det. jet #it{p}_{T} (GeV);Counts", jet_pT]
+    jet_pT_gen_matched: [1, "jet_pT_gen_matched", "Matched gen. jet #it{p}_{T} spectrum;gen. jet #it{p}_{T} (GeV);Counts", jet_pT]
+    # jet_pT_det_fake: [1, "jet_pT_det_fake", "fake det. jet #it{p}_{T} spectrum;det. jet #it{p}_{T} (GeV);Counts", jet_pT]
+    # jet_pT_gen_miss: [1, "jet_pT_gen_miss", "miss gen. jet #it{p}_{T} spectrum;gen. jet #it{p}_{T} (GeV);Counts", jet_pT]
+    jet_pT_resp: [2, "jet_pT_resp", "Jet #it{p}_{T} response matrix;det. jet #it{p}_{T} (GeV);gen. jet #it{p}_{T} (GeV)", jet_pT, jet_pT]
+  responses:
+    jet_pT_unf: [1, "jet_pT_unf", "Jet pT response matrix", jet_pT, jet_pT]
+    # eec_unf: [3, "eec_unf", "EEC pair response matrix", ew, RL, jet_pT, ew, RL, jet_pT]

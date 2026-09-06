@@ -16,8 +16,8 @@ jet_finder:
   pT_min: 10
 
 analysis:
-  pThat_scale_det: 8
-  pThat_scale_gen: 1000
+  pThat_scale_det: 6
+  pThat_scale_gen: 6
 
 output:
   bins:
