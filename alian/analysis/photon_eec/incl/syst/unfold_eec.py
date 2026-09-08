@@ -78,6 +78,8 @@ class UnfoldEECPairs(AnalysisMCBase):
         'eec_ew_max': 1.0,
         'eec_jet_pT_min': 20,
         'eec_jet_pT_max': 160,
+        "pThat_scale_det": 1000,
+        "pThat_scale_gen": 1000,
     }
     def init_analysis(self, analysis_cfg: dict):
         config = self._defaults | analysis_cfg
@@ -102,6 +104,15 @@ class UnfoldEECPairs(AnalysisMCBase):
         return psj1.user_info[alian.TrackInfo]().is_matched_to(psj2)
 
     def analyze_event(self):
+        pass_cut = True
+        if self.jets_det and (self.jets_det[0].pt() / self.pThat) > self.pThat_scale_det:
+            pass_cut = False
+        if self.jets_gen and (self.jets_gen[0].pt() / self.pThat) > self.pThat_scale_gen:
+            pass_cut = False
+        if not pass_cut:
+            self.logger.warning(f"Rejecting event: {len(self.jets_det)} det jets, {len(self.jets_gen)} gen jets")
+            return
+
         pairs_det = {ctype: [] for ctype in self.ctypes}
         for jet_det in self.jets_det:
             jet_pT_det = jet_det.pt()

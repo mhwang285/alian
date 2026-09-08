@@ -15,13 +15,15 @@ jet_finder:
 
 analysis:
   pt_min_eec: 1.0
+  pThat_scale_det: 4
+  pThat_scale_gen: 6
 
 output:
   bins:
     # jet_pT: ['lin', 10, 150, 14]
     jet_pT: ['c', [5, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]]
     RL: ['log', 1.0e-2, 0.4, 20]
-    ew: ['log', 1.0e-6, 1, 15]
+    ew: ['log', 3.0e-5, 1, 15]
   histograms:
     # eec_T_det: [3, "eec_T_det", "EEC T det", RL, ew, jet_pT]
     # eec_P_det: [3, "eec_P_det", "EEC P det", RL, ew, jet_pT]

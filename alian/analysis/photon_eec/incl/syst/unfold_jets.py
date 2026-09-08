@@ -25,6 +25,8 @@ class UnfoldJets(AnalysisMCBase):
     _defaults = {
         # 'pt_min_eec': 1.0,
         "jet_matching": 0.6,
+        "pThat_scale_det": 1000,
+        "pThat_scale_gen": 1000,
         "jet_pT_max_gen": 200,
         "jet_pT_max_det": 200,
     }
@@ -37,6 +39,15 @@ class UnfoldJets(AnalysisMCBase):
         self.jet_pT_max_gen = self.hists["jet_pT_gen"].GetXaxis().GetXmax()
 
     def analyze_event(self):
+        pass_cut = True
+        if self.jets_det and (self.jets_det[0].pt() / self.pThat) > self.pThat_scale_det:
+            pass_cut = False
+        if self.jets_gen and (self.jets_gen[0].pt() / self.pThat) > self.pThat_scale_gen:
+            pass_cut = False
+        if not pass_cut:
+            self.logger.warning(f"Rejecting event: {len(self.jets_det)} det jets, {len(self.jets_gen)} gen jets")
+            return
+
         # if any(j.pt() > 4 * self.pThat for j in self.jets_det):
         #     return
         # if any(j.pt() > 4 * self.pThat for j in self.jets_gen):

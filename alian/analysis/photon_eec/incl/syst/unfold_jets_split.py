@@ -25,6 +25,8 @@ class UnfoldJetsSplit(AnalysisMCBase):
     _defaults = {
         # 'pt_min_eec': 1.0,
         "jet_matching": 0.6,
+        "pThat_scale_det": 1000,
+        "pThat_scale_gen": 1000,
         "jet_pT_max_gen": 200,
         "jet_pT_max_det": 200,
         "split": 0.5,
@@ -45,6 +47,15 @@ class UnfoldJetsSplit(AnalysisMCBase):
             self.rng = np.random.default_rng(seed = self.rng_seed)
 
     def analyze_event_split(self):
+        pass_cut = True
+        if self.jets_det and (self.jets_det[0].pt() / self.pThat) > self.pThat_scale_det:
+            pass_cut = False
+        if self.jets_gen and (self.jets_gen[0].pt() / self.pThat) > self.pThat_scale_gen:
+            pass_cut = False
+        if not pass_cut:
+            self.logger.warning(f"Rejecting event: {len(self.jets_det)} det jets, {len(self.jets_gen)} gen jets")
+            return
+
         if self.is_1:
             split = 1
         else:
