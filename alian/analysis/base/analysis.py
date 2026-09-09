@@ -128,9 +128,11 @@ class AnalysisBase:
         self.logger.info("Analyzing events...")
         # slurm_check = is_slurm()
         slurm_check = True
+        self.iev = 0
         for e in self.data_source.next_event(disable_bar = slurm_check):
             # build the event only
             self.build_event(e)
+            self.iev += 1
             # skip if the event doesn't pass the selection
             if not self.selector.event.selects(self.event):
                 continue

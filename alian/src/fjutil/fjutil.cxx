@@ -262,7 +262,7 @@ namespace alian
 		PyArrayObject *np_eta = reinterpret_cast<PyArrayObject *>(eta);
 		PyArrayObject *np_phi = reinterpret_cast<PyArrayObject *>(phi);
 		PyArrayObject *np_tracksel = reinterpret_cast<PyArrayObject *>(tracksel);
-		PyArrayObject *np_mcid = reinterpret_cast<PyArrayObject *>(mcid);
+		PyArrayObject *np_mcid = reinterpret_cast<PyArrayObject *>(PyArray_FROM_OTF(mcid, NPY_INT64, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_FORCECAST));
 
 		if (PyArray_NDIM(np_pt) != 1 || PyArray_NDIM(np_eta) != 1 || PyArray_NDIM(np_phi) != 1 || PyArray_NDIM(np_tracksel) != 1 || PyArray_NDIM(np_mcid) != 1)
 		{
