@@ -24,6 +24,12 @@ registry = {
     ROOT.TH3I: ['3I', '3i'],
 }
 
+mapping_double = {
+    ROOT.TH1F: ROOT.TH2F,
+    ROOT.TH1D: ROOT.TH2D,
+    ROOT.TH1I: ROOT.TH2I
+}
+
 # reverse registry mapping to map key to specific ROOT class
 HISTOGRAM_REGISTRY = {
     key: value
@@ -160,7 +166,15 @@ class Output:
                 binnings_gen = [val for name in bin_names[ndims:] for val in (self._nbins[name], self._bins[name])]
                 helper_hist_gen = root_hist_cls(helper_gen_name, helper_gen_name, *binnings_gen)
 
-                self.responses[tag] = RooUnfoldResponse(helper_hist_det, helper_hist_gen, name, title)
+                if ndims == 1:
+                    # workaround for 3.0.5 where not specifying the 2D matrix will force bin edges to 0 -> 1
+                    # is fixed in 3.1.0 but then 3.1.0 has its own (worse) issues...
+                    root_hist_cls_double = mapping_double[root_hist_cls]
+                    helper_resp_name = f"{name}_helper_resp"
+                    helper_hist_resp = root_hist_cls_double(helper_resp_name, helper_resp_name, *binnings_det, *binnings_gen)
+                    self.responses[tag] = RooUnfoldResponse(helper_hist_det, helper_hist_gen, helper_hist_resp, name, title)
+                else:
+                    self.responses[tag] = RooUnfoldResponse(helper_hist_det, helper_hist_gen, name, title)
                 self.names.append(name)
         self._check_for_duplicates()
 

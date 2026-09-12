@@ -93,12 +93,6 @@ class UnfoldEECPairs(AnalysisMCBase):
         self.eec_ew_max = self.output._bins["ew"][-1]
         self.eec_jet_pT_min = self.output._bins["jet_pT"][0]
         self.eec_jet_pT_max = self.output._bins["jet_pT"][-1]
-        # self.eec_RL_min = self.hists["eec_T_det"].GetXaxis().GetXmin()
-        # self.eec_RL_max = self.hists["eec_T_det"].GetXaxis().GetXmax()
-        # self.eec_ew_min = self.hists["eec_T_det"].GetYaxis().GetXmin()
-        # self.eec_ew_max = self.hists["eec_T_det"].GetYaxis().GetXmax()
-        # self.eec_jet_pT_min = self.hists["eec_T_det"].GetZaxis().GetXmin()
-        # self.eec_jet_pT_max = self.hists["eec_T_det"].GetZaxis().GetXmax()
 
     def is_matched(self, psj1, psj2):
         return psj1.user_info[alian.TrackInfo]().is_matched_to(psj2)
@@ -194,47 +188,6 @@ class UnfoldEECPairs(AnalysisMCBase):
         # hresponse = self.responses["eec_P_unf"].Hresponse()
         # hresponse.SetName("hresponse_P")
         # self.hists["hresponse_P"] = hresponse
-
-    # def do_eec_det(self, jet):
-    #     tracks = self.eec_trk_selector(jet.constituents())
-
-    #     for p1, p2 in itertools.permutations(tracks, 2):
-    #         ew = p1.pt() * p2.pt() / jet.pt() / jet.pt()
-    #         angle = delta_R(p1, p2)
-    #         q1 = p1.user_info[alian.TrackInfo]().q()
-    #         q2 = p2.user_info[alian.TrackInfo]().q()
-    #         phistar = self.calc_phistar(p1, p2, q1, q2)
-    #         delta_eta = p2.eta() - p1.eta()
-    #         if np.abs(phistar) < self.phistar_cut and np.abs(delta_eta) < self.eta_cut:
-    #             continue
-
-    #         self.hists["eec_T_det"].Fill(jet.pt(), angle, ew * self.weight)
-    #         self.hists["eec_Q_det"].Fill(jet.pt(), angle, ew * self.weight * q1 * q2)
-    #         if q1 > 0 and q2 > 0:
-    #             self.hists["eec_P_det"].Fill(jet.pt(), angle, ew * self.weight)
-    #         elif q1 < 0 and q2 < 0:
-    #             self.hists["eec_M_det"].Fill(jet.pt(), angle, ew * self.weight)
-    #         else:
-    #             self.hists["eec_PM_det"].Fill(jet.pt(), angle, ew * self.weight)
-
-    # def do_eec_gen(self, jet):
-    #     particles = self.eec_trk_selector(jet.constituents())
-
-    #     for p1, p2 in itertools.permutations(particles, 2):
-    #         ew = p1.pt() * p2.pt() / jet.pt() / jet.pt()
-    #         angle = delta_R(p1, p2)
-    #         q1 = p1.user_info[alian.ParticleInfo]().q()
-    #         q2 = p2.user_info[alian.ParticleInfo]().q()
-
-    #         self.hists["eec_T_gen"].Fill(jet.pt(), angle, ew * self.weight)
-    #         self.hists["eec_Q_gen"].Fill(jet.pt(), angle, ew * self.weight * q1 * q2)
-    #         if q1 > 0 and q2 > 0:
-    #             self.hists["eec_P_gen"].Fill(jet.pt(), angle, ew * self.weight)
-    #         elif q1 < 0 and q2 < 0:
-    #             self.hists["eec_M_gen"].Fill(jet.pt(), angle, ew * self.weight)
-    #         else:
-    #             self.hists["eec_PM_gen"].Fill(jet.pt(), angle, ew * self.weight)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run analysis on ROOT file using YAML configuration.")
