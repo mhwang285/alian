@@ -24,6 +24,10 @@ alian = heppyy.load_cppyy("alian")
 
 
 class AnalysisExample(AnalysisMCBase):
+    _defaults = {
+        "pThat_scale_det": 1000,
+        "pThat_scale_gen": 1000,
+    }
     def init_analysis(self, analysis_cfg: dict):
         config = self._defaults | analysis_cfg
         for setting, value in config.items():
@@ -52,6 +56,15 @@ class AnalysisExample(AnalysisMCBase):
         # with + cos not - cos (proper angle is 180-theta not theta)
 
     def analyze_event(self):
+        pass_cut = True
+        if self.jets_det and (self.jets_det[0].pt() / self.pThat) > self.pThat_scale_det:
+            pass_cut = False
+        if self.jets_gen and (self.jets_gen[0].pt() / self.pThat) > self.pThat_scale_gen:
+            pass_cut = False
+        if not pass_cut:
+            self.logger.warning(f"Rejecting event: {len(self.jets_det)} det jets, {len(self.jets_gen)} gen jets")
+            return
+
         for p1, p2 in itertools.combinations(self.particles, 2):
             info1 = p1.user_info[alian.TrackInfo]()
             info2 = p2.user_info[alian.TrackInfo]()

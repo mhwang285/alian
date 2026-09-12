@@ -28,6 +28,8 @@ class SystSingle(AnalysisMCBase):
     _defaults = {
         'pt_min_eec': 1.0,
         'rng_seed': 5,
+        "pThat_scale_det": 1000,
+        "pThat_scale_gen": 1000,
     }
     def init_analysis(self, analysis_cfg: dict):
         config = self._defaults | analysis_cfg
@@ -36,6 +38,7 @@ class SystSingle(AnalysisMCBase):
         self.eec_trk_selector = fj.SelectorPtMin(self.pt_min_eec)
         self.rng = np.random.default_rng(seed = self.rng_seed)
         self.jet_finder_rej = JetFinder.load(self.cfg)
+        self.jet_finder_rej.reject_100 = True
         self.jet_finder_rej.dump()
 
     def reject_tracks_pt(self, tracks):
@@ -71,15 +74,21 @@ class SystSingle(AnalysisMCBase):
 
 
     def analyze_event(self):
+        pass_cut = True
+        if self.jets_det and (self.jets_det[0].pt() / self.pThat) > self.pThat_scale_det:
+            pass_cut = False
+        if self.jets_gen and (self.jets_gen[0].pt() / self.pThat) > self.pThat_scale_gen:
+            pass_cut = False
+        if not pass_cut:
+            self.logger.warning(f"Rejecting event: {len(self.jets_det)} det jets, {len(self.jets_gen)} gen jets")
+            return
+
         rej_tracks = self.reject_tracks_pt(self.tracks)
         jets_rej = self.jet_finder_rej.find_jets(rej_tracks)
         [self.hists['track_pT_rej'].Fill(t.pt(), self.weight) for t in rej_tracks]
         [self.hists['track_pT_det'].Fill(t.pt(), self.weight) for t in self.tracks]
         [self.hists['track_pT_gen'].Fill(t.pt(), self.weight) for t in self.particles]
 
-        [self.hists['jet_pT_rej'].Fill(j.pt(), self.weight) for j in jets_rej]
-        [self.hists['jet_pT_det'].Fill(j.pt(), self.weight) for j in self.jets_det]
-        [self.hists['jet_pT_gen'].Fill(j.pt(), self.weight) for j in self.jets_gen]
         for j in jets_rej:
             self.do_eec(j, "rej")
         for j in self.jets_det:
@@ -88,6 +97,7 @@ class SystSingle(AnalysisMCBase):
             self.do_eec(j, "gen")
 
     def do_eec(self, jet, suffix):
+        self.hists[f'jet_pT_{suffix}'].Fill(jet.pt(), self.weight)
         tracks = self.eec_trk_selector(jet.constituents())
 
         for p1, p2 in itertools.permutations(tracks, 2):
@@ -100,7 +110,7 @@ class SystSingle(AnalysisMCBase):
             self.hists[f"eec_Q_{suffix}"].Fill(jet.pt(), angle, ew * self.weight * q1 * q2)
             if q1 > 0 and q2 > 0:
                 self.hists[f"eec_P_{suffix}"].Fill(jet.pt(), angle, ew * self.weight)
-            if q1 < 0 and q2 < 0:
+            elif q1 < 0 and q2 < 0:
                 self.hists[f"eec_M_{suffix}"].Fill(jet.pt(), angle, ew * self.weight)
             else:
                 self.hists[f"eec_PM_{suffix}"].Fill(jet.pt(), angle, ew * self.weight)

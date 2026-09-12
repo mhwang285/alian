@@ -28,6 +28,8 @@ class SystPairMC(AnalysisMCBase):
         'pt_min_eec': 1.0,
         'phistar_cut': 0.01,
         'eta_cut': 0.008,
+        "pThat_scale_det": 1000,
+        "pThat_scale_gen": 1000,
     }
     def init_analysis(self, analysis_cfg: dict):
         config = self._defaults | analysis_cfg
@@ -53,14 +55,23 @@ class SystPairMC(AnalysisMCBase):
         return dphi
 
     def analyze_event(self):
-        for j in self.jets_det:
-            self.hists['jet_pT_det'].Fill(j.pt(), self.weight)
-            self.do_eec_det(j)
-        for j in self.jets_gen:
-            self.hists['jet_pT_gen'].Fill(j.pt(), self.weight)
-            self.do_eec_gen(j)
+        pass_cut = True
+        if self.jets_det and (self.jets_det[0].pt() / self.pThat) > self.pThat_scale_det:
+            pass_cut = False
+        if self.jets_gen and (self.jets_gen[0].pt() / self.pThat) > self.pThat_scale_gen:
+            pass_cut = False
+        if not pass_cut:
+            self.logger.warning(f"Rejecting event: {len(self.jets_det)} det jets, {len(self.jets_gen)} gen jets")
+            return
 
-    def do_eec_det(self, jet):
+        for j in self.jets_det:
+            self.do_eec(j, "rej")
+            self.do_eec(j, "det")
+        for j in self.jets_gen:
+            self.do_eec(j, "gen")
+
+    def do_eec(self, jet, suffix):
+        self.hists[f'jet_pT_{suffix}'].Fill(jet.pt(), self.weight)
         tracks = self.eec_trk_selector(jet.constituents())
 
         for p1, p2 in itertools.permutations(tracks, 2):
@@ -68,37 +79,20 @@ class SystPairMC(AnalysisMCBase):
             angle = delta_R(p1, p2)
             q1 = p1.user_info[alian.TrackInfo]().q()
             q2 = p2.user_info[alian.TrackInfo]().q()
-            phistar = self.calc_phistar(p1, p2, q1, q2)
-            delta_eta = p2.eta() - p1.eta()
-            if np.abs(phistar) < self.phistar_cut and np.abs(delta_eta) < self.eta_cut:
-                continue
+            if suffix == "rej":
+                phistar = self.calc_phistar(p1, p2, q1, q2)
+                delta_eta = p2.eta() - p1.eta()
+                if np.abs(phistar) < self.phistar_cut and np.abs(delta_eta) < self.eta_cut:
+                    continue
 
-            self.hists["eec_T_det"].Fill(jet.pt(), angle, ew * self.weight)
-            self.hists["eec_Q_det"].Fill(jet.pt(), angle, ew * self.weight * q1 * q2)
+            self.hists[f"eec_T_{suffix}"].Fill(jet.pt(), angle, ew * self.weight)
+            self.hists[f"eec_Q_{suffix}"].Fill(jet.pt(), angle, ew * self.weight * q1 * q2)
             if q1 > 0 and q2 > 0:
-                self.hists["eec_P_det"].Fill(jet.pt(), angle, ew * self.weight)
+                self.hists[f"eec_P_{suffix}"].Fill(jet.pt(), angle, ew * self.weight)
             elif q1 < 0 and q2 < 0:
-                self.hists["eec_M_det"].Fill(jet.pt(), angle, ew * self.weight)
+                self.hists[f"eec_M_{suffix}"].Fill(jet.pt(), angle, ew * self.weight)
             else:
-                self.hists["eec_PM_det"].Fill(jet.pt(), angle, ew * self.weight)
-
-    def do_eec_gen(self, jet):
-        particles = self.eec_trk_selector(jet.constituents())
-
-        for p1, p2 in itertools.permutations(particles, 2):
-            ew = p1.pt() * p2.pt() / jet.pt() / jet.pt()
-            angle = delta_R(p1, p2)
-            q1 = p1.user_info[alian.TrackInfo]().q()
-            q2 = p2.user_info[alian.TrackInfo]().q()
-
-            self.hists["eec_T_gen"].Fill(jet.pt(), angle, ew * self.weight)
-            self.hists["eec_Q_gen"].Fill(jet.pt(), angle, ew * self.weight * q1 * q2)
-            if q1 > 0 and q2 > 0:
-                self.hists["eec_P_gen"].Fill(jet.pt(), angle, ew * self.weight)
-            elif q1 < 0 and q2 < 0:
-                self.hists["eec_M_gen"].Fill(jet.pt(), angle, ew * self.weight)
-            else:
-                self.hists["eec_PM_gen"].Fill(jet.pt(), angle, ew * self.weight)
+                self.hists[f"eec_PM_{suffix}"].Fill(jet.pt(), angle, ew * self.weight)
 
 
 if __name__ == '__main__':

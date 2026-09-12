@@ -52,12 +52,12 @@ class SystPairData(AnalysisBase):
         return dphi
 
     def analyze_event(self):
-        for jet in self.jets:
-            self.hists["jet_pT"].Fill(jet.pt())
-            self.do_eec_rej(jet)
-            self.do_eec_nom(jet)
+        for j in self.jets:
+            self.do_eec(j, "rej")
+            self.do_eec(j, "nom")
 
-    def do_eec_rej(self, jet):
+    def do_eec(self, jet, suffix):
+        self.hists[f"jet_pT_{suffix}"].Fill(jet.pt())
         tracks = self.eec_trk_selector(jet.constituents())
 
         for p1, p2 in itertools.permutations(tracks, 2):
@@ -65,36 +65,20 @@ class SystPairData(AnalysisBase):
             angle = delta_R(p1, p2)
             q1 = p1.user_info[alian.TrackInfo]().q()
             q2 = p2.user_info[alian.TrackInfo]().q()
-            phistar = self.calc_phistar(p1, p2, q1, q2)
-            delta_eta = p2.eta() - p1.eta()
-            if np.abs(phistar) < self.phistar_cut and np.abs(delta_eta) < self.eta_cut:
-                continue
+            if suffix == "rej":
+                phistar = self.calc_phistar(p1, p2, q1, q2)
+                delta_eta = p2.eta() - p1.eta()
+                if np.abs(phistar) < self.phistar_cut and np.abs(delta_eta) < self.eta_cut:
+                    continue
 
-            self.hists["eec_rej_T"].Fill(jet.pt(), angle, ew)
-            self.hists["eec_rej_Q"].Fill(jet.pt(), angle, ew * q1 * q2)
+            self.hists[f"eec_T_{suffix}"].Fill(jet.pt(), angle, ew)
+            self.hists[f"eec_Q_{suffix}"].Fill(jet.pt(), angle, ew * q1 * q2)
             if q1 > 0 and q2 > 0:
-                self.hists["eec_rej_P"].Fill(jet.pt(), angle, ew)
+                self.hists[f"eec_P_{suffix}"].Fill(jet.pt(), angle, ew)
             elif q1 < 0 and q2 < 0:
-                self.hists["eec_rej_M"].Fill(jet.pt(), angle, ew)
+                self.hists[f"eec_M_{suffix}"].Fill(jet.pt(), angle, ew)
             else:
-                self.hists["eec_rej_PM"].Fill(jet.pt(), angle, ew)
-
-    def do_eec_nom(self, jet):
-        tracks = self.eec_trk_selector(jet.constituents())
-        for p1, p2 in itertools.permutations(tracks, 2):
-            ew = p1.pt() * p2.pt() / jet.pt() / jet.pt()
-            angle = delta_R(p1, p2)
-            q1 = p1.user_info[alian.TrackInfo]().q()
-            q2 = p2.user_info[alian.TrackInfo]().q()
-
-            self.hists["eec_nom_T"].Fill(jet.pt(), angle, ew)
-            self.hists["eec_nom_Q"].Fill(jet.pt(), angle, ew * q1 * q2)
-            if q1 > 0 and q2 > 0:
-                self.hists["eec_nom_P"].Fill(jet.pt(), angle, ew)
-            elif q1 < 0 and q2 < 0:
-                self.hists["eec_nom_M"].Fill(jet.pt(), angle, ew)
-            else:
-                self.hists["eec_nom_PM"].Fill(jet.pt(), angle, ew)
+                self.hists[f"eec_PM_{suffix}"].Fill(jet.pt(), angle, ew)
 
 
 

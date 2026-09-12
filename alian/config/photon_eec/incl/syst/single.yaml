@@ -22,6 +22,8 @@ jet_finder:
 analysis:
   pt_min_eec: 1.0
   rng_seed: null
+  pThat_scale_det: 4
+  pThat_scale_gen: 6
 
 output:
   bins:
