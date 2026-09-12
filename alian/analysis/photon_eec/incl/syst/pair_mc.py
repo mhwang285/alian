@@ -88,8 +88,8 @@ class SystPairMC(AnalysisMCBase):
         for p1, p2 in itertools.permutations(particles, 2):
             ew = p1.pt() * p2.pt() / jet.pt() / jet.pt()
             angle = delta_R(p1, p2)
-            q1 = p1.user_info[alian.ParticleInfo]().q()
-            q2 = p2.user_info[alian.ParticleInfo]().q()
+            q1 = p1.user_info[alian.TrackInfo]().q()
+            q2 = p2.user_info[alian.TrackInfo]().q()
 
             self.hists["eec_T_gen"].Fill(jet.pt(), angle, ew * self.weight)
             self.hists["eec_Q_gen"].Fill(jet.pt(), angle, ew * self.weight * q1 * q2)

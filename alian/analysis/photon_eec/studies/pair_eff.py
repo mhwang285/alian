@@ -53,8 +53,8 @@ class AnalysisExample(AnalysisMCBase):
 
     def analyze_event(self):
         for p1, p2 in itertools.combinations(self.particles, 2):
-            info1 = p1.user_info[alian.ParticleInfo]()
-            info2 = p2.user_info[alian.ParticleInfo]()
+            info1 = p1.user_info[alian.TrackInfo]()
+            info2 = p2.user_info[alian.TrackInfo]()
             q1 = info1.q()
             q2 = info2.q()
             p1_has_match = info1.has_match()
