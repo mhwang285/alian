@@ -33,7 +33,7 @@ RUN apt-get update -qq \
  && ln -s /opt/apps/lmod/lmod/init/profile /etc/profile.d/z00_lmod.sh \
  && cd /opt \
  && . /etc/profile.d/z00_lmod.sh \
- && git clone --depth 1 --branch unbump-roounfold --single-branch https://github.com/mhwang285/yasp.git \
+ && git clone --depth 1 --branch main --single-branch https://github.com/matplo/yasp.git \
  && ./yasp/yaspenv.sh \
    "python3 -m pip install --no-cache-dir -r apps/requirements.txt \
  && yasp -mi bundle/hepbase --opt rootspec=ubuntu22.04 pythiaver=8317 n_cores=2 \
