@@ -1,0 +1,25 @@
+# Event cuts
+selections:
+  event:
+    event_sel: selMC
+    rct: CBT
+  track:
+    pt_min: 0.150
+    track_sel: globalTrack
+
+analysis:
+  pt_min_eec: 1.0
+
+output:
+  bins:
+    track_pT: ['log', 0.15, 30, 300]
+    res: ['lin', -7, 7, 80]
+  histograms:
+    # define histograms with bins described in `bins`
+    track_pT_det: [1, "track_pT_det", "Det. track #it{p}_{T} spectrum;#it{p}_{T} (GeV);Counts", track_pT]
+    track_pT_gen: [1, "track_pT_gen", "Gen. track #it{p}_{T} spectrum;#it{p}_{T} (GeV);Counts", track_pT]
+    eff_track_pT_gen: [1, "eff_track_pT_gen", "Gen. track #it{p}_{T} spectrum;#it{p}_{T} (GeV);Counts", track_pT]
+    pur_track_pT_det: [1, "pur_track_pT_det", "Det. track #it{p}_{T} spectrum;#it{p}_{T} (GeV);Counts", track_pT]
+    ch_track_pT_gen: [1, "ch_track_pT_gen", "Gen. track #it{p}_{T} spectrum;#it{p}_{T} (GeV);Counts", track_pT]
+    ch_eff_track_pT_gen: [1, "ch_eff_track_pT_gen", "Gen. track #it{p}_{T} spectrum (matched charge);#it{p}_{T} (GeV);Counts", track_pT]
+    pT_res: [2, "pT_res", "#it{p}_{T} resolution;#it{p}_{T} (GeV);Resolution (%)", track_pT, res]

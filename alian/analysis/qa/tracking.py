@@ -41,10 +41,6 @@ class TrackingPerformance(AnalysisMCBase):
                 self.hists['pur_track_pT_det'].Fill(t.pt(), self.weight)
 
 
-    def finalize(self):
-        self.hists['track_pT_det'].Scale(1, "width")
-        self.hists['track_pT_gen'].Scale(1, "width")
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run analysis on ROOT file using YAML configuration.")
     parser = add_default_args(parser)
