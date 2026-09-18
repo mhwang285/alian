@@ -1,7 +1,7 @@
 # Event cuts
 selections:
   event:
-    event_sel: selMC
+    event_sel: sel8
     rct: CBT
   track:
     pt_min: 0.150
@@ -11,7 +11,8 @@ selections:
 jet_finder:
   R: 0.4
   alg: antikt
-  pT_min: 10
+  pT_min: 8
+  reject_100: true
 
 analysis:
   pt_min_eec: 1.0
