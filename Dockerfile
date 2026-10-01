@@ -36,7 +36,7 @@ RUN apt-get update -qq \
  && git clone --depth 1 --branch main --single-branch https://github.com/tch285/yasp.git \
  && ./yasp/yaspenv.sh \
    "python3 -m pip install --no-cache-dir -r apps/requirements.txt \
- && yasp -mi bundle/hepbase --opt rootspec=ubuntu22.04 pythiaver=8310 n_cores=2 \
+ && yasp -mi bundle/hepbase --opt rootspec=ubuntu22.04 pythiaver=8318 n_cores=2 \
  && module use yasp/software/modules \
  && module load yasp bundle/hepbase \
  && git clone --depth 1 --branch main --single-branch https://github.com/matplo/heppyy.git \
