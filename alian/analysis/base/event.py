@@ -89,11 +89,10 @@ def get_selected_tracks_mc(ev, selector):
 
 def get_particles(ev):
     """Get selected particles from an event."""
-    return alian.numpy_ptetaphie_to_particles(
+    return alian.numpy_ptetaphi_to_particles(
         ev.data["fGenPt"],
         ev.data["fGenEta"],
         ev.data["fGenPhi"],
-        ev.data["fGenE"],
         ev.data["fGenCharge"],
         ev.data["fGenMcId"],
         ev.data["fPdgId"],

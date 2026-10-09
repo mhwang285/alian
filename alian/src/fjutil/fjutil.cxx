@@ -310,7 +310,7 @@ namespace alian
 		return tracks;
 	}
 
-	// function to transform numpy arrays (pT, eta, phi, mcid) into a vector of PseudoJets with truth-level MC information
+	// function to transform numpy arrays (pT, eta, phi, energy, mcid) into a vector of PseudoJets with truth-level MC information
 	std::vector<fastjet::PseudoJet> numpy_ptetaphie_to_particles(PyObject *pt, PyObject *eta, PyObject *phi, PyObject *energy, PyObject *charge, PyObject *mcid, PyObject *pdgid, int index_offset)
 	{
 		PyArrayObject *np_pt = reinterpret_cast<PyArrayObject *>(pt);
@@ -358,6 +358,61 @@ namespace alian
 			double pz = pt_data[i] * sinh(eta_data[i]);
 			// no need to assume pion mass
 			double E = energy_data[i];
+
+			tracks.emplace_back(px, py, pz, E);
+			tracks.back().set_user_info(new alian::TrackInfo(charge_data[i], mcid_data[i], pdgid_data[i]));
+			tracks.back().set_user_index(i + index_offset);
+		}
+
+		return tracks;
+	}
+
+	// function to transform numpy arrays (pT, eta, phi, mcid) into a vector of PseudoJets with truth-level MC information
+	std::vector<fastjet::PseudoJet> numpy_ptetaphi_to_particles(PyObject *pt, PyObject *eta, PyObject *phi, PyObject *charge, PyObject *mcid, PyObject *pdgid, int index_offset)
+	{
+		PyArrayObject *np_pt = reinterpret_cast<PyArrayObject *>(pt);
+		PyArrayObject *np_eta = reinterpret_cast<PyArrayObject *>(eta);
+		PyArrayObject *np_phi = reinterpret_cast<PyArrayObject *>(phi);
+		PyArrayObject *np_charge = reinterpret_cast<PyArrayObject *>(charge);
+		PyArrayObject *np_mcid = reinterpret_cast<PyArrayObject *>(mcid);
+		PyArrayObject *np_pdgid = reinterpret_cast<PyArrayObject *>(pdgid);
+
+		if (PyArray_NDIM(np_pt) != 1 || PyArray_NDIM(np_eta) != 1 || PyArray_NDIM(np_phi) != 1 || PyArray_NDIM(np_charge) != 1 || PyArray_NDIM(np_mcid) != 1 || PyArray_NDIM(np_pdgid) != 1)
+		{
+			PyErr_SetString(PyExc_TypeError, "Arrays must be one-dimensional");
+			return std::vector<fastjet::PseudoJet>();
+		}
+
+		npy_intp size = PyArray_SIZE(np_pt);
+		if (size != PyArray_SIZE(np_eta) || size != PyArray_SIZE(np_phi) || size  != PyArray_SIZE(np_charge) || size  != PyArray_SIZE(np_mcid) || size  != PyArray_SIZE(np_pdgid))
+		{
+			PyErr_SetString(PyExc_ValueError, "Arrays must have the same size");
+			return std::vector<fastjet::PseudoJet>();
+		}
+
+		float *pt_data  = static_cast<float *>(PyArray_DATA(np_pt));
+		float *eta_data = static_cast<float *>(PyArray_DATA(np_eta));
+		float *phi_data = static_cast<float *>(PyArray_DATA(np_phi));
+		int *charge_data = static_cast<int *>(PyArray_DATA(np_charge));
+		long *mcid_data = static_cast<long *>(PyArray_DATA(np_mcid));
+		int *pdgid_data = static_cast<int *>(PyArray_DATA(np_pdgid));
+
+		std::vector<fastjet::PseudoJet> tracks;
+		tracks.reserve(size);
+
+		for (npy_intp i = 0; i < size; ++i)
+		{
+			if (pt_data[i] <= 0.001) // this is 1 MeV (!)
+			{
+				// PyErr_SetString(PyExc_ValueError, "pt must be positive");
+				return std::vector<fastjet::PseudoJet>();
+				continue;
+			}
+			double px = pt_data[i] * cos(phi_data[i]);
+			double py = pt_data[i] * sin(phi_data[i]);
+			double pz = pt_data[i] * sinh(eta_data[i]);
+			// no need to assume pion mass
+			double E = sqrt(px * px + py * py + pz * pz + PION_MASS * PION_MASS);
 
 			tracks.emplace_back(px, py, pz, E);
 			tracks.back().set_user_info(new alian::TrackInfo(charge_data[i], mcid_data[i], pdgid_data[i]));
