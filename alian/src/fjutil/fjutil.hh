@@ -58,6 +58,7 @@ namespace alian
 	std::vector<fastjet::PseudoJet> numpy_ptetaphi_to_tracks(PyObject *pt, PyObject *eta, PyObject *phi, PyObject *tracksel, int index_offset);
 	std::vector<fastjet::PseudoJet> numpy_ptetaphi_to_tracks_mc(PyObject *pt, PyObject *eta, PyObject *phi, PyObject *tracksel, PyObject *mcid, int index_offset);
 	std::vector<fastjet::PseudoJet> numpy_ptetaphie_to_particles(PyObject *pt, PyObject *eta, PyObject *phi, PyObject *energy, PyObject *charge, PyObject *mcid, PyObject *pdgid, int index_offset);
+	std::vector<fastjet::PseudoJet> numpy_ptetaphi_to_particles(PyObject *pt, PyObject *eta, PyObject *phi, PyObject *charge, PyObject *mcid, PyObject *pdgid, int index_offset);
 
 	class TrackInfo : public fastjet::PseudoJet::UserInfoBase
 	{
