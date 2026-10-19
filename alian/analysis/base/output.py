@@ -94,19 +94,19 @@ class Output:
         else:
             raise TypeError(f"Could not parse splitting parameter of type {type(split)}, must be None, int or list")
 
-        self.logger.info("Initializing histograms...", stacklevel = 2)
+        self.logger.info("Initializing histograms...")
         self._init_bins(bins)
         self._init_histograms(histograms)
-        self.logger.info("Histograms initialized.", stacklevel = 2)
-        self.logger.info("Initializing trees...", stacklevel = 2)
+        self.logger.info("Histograms initialized.")
+        self.logger.info("Initializing trees...")
         self._init_branches(branches)
         self._init_trees(trees)
-        self.logger.info("Trees initialized.", stacklevel = 2)
-        self.logger.info("Initializing response matrices...", stacklevel = 2)
+        self.logger.info("Trees initialized.")
+        self.logger.info("Initializing response matrices...")
         if not self._bins_init_done:
             self._init_bins(bins)
         self._init_responses(responses)
-        self.logger.info("Response matrices initialized.", stacklevel = 2)
+        self.logger.info("Response matrices initialized.")
 
     @singledispatchmethod
     @classmethod
