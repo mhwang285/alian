@@ -1,3 +1,4 @@
+from collections import UserDict
 from functools import singledispatchmethod
 from pathlib import Path
 
@@ -37,16 +38,62 @@ HISTOGRAM_REGISTRY = {
     for key in keys
 }
 
+class Collection(UserDict):
+    def __init__(self, *args, **kwargs):
+        nsplit = kwargs.pop("nsplit")
+        super().__init__(*args, **kwargs)
+        if nsplit > 0:
+            # give a sensible initial split so one can query histogram properties
+            # prior to analysis
+            self.split = "1_"
+        else:
+            self.split = ""
+
+    def __getitem__(self, key):
+        return super().__getitem__(f"{self.split}{key}")
+    def set_split(self, split):
+        self.split = split
+    def get_direct(self, key):
+        return self.data[key]
+    def save(self, file):
+        for obj in self.data.values():
+            file.WriteTObject(obj)
+
+
 class Output:
-    def __init__(self, bins, histograms, branches, trees, responses, split = False):
+    def __init__(self, bins, histograms, branches, trees, responses, split = None):
         self.logger = set_up_logger(__name__)
         self._bins_init_done = False
         self.names = []
-        self.logger.info(f"Output split copies: {split}")
-        if split:
-            self.splits = ["1_", "2_"]
+        self.logger.info(f"Output splitting: {split}")
+        if split is None:
+            self.split = split
+            self.nsplit = 0
+            self.split_ids = [""]
+        elif isinstance(split, int):
+            if split > 1:
+                # split the dataset in a 1 : split - 1 ratio
+                # for example, split = 5 will split the data into 1/5 and 4/5
+                self.split = ["1_"] + ["2_"] * (split - 1)
+                self.nsplit = split
+                self.split_ids = ["1_", "2_"]
+            else:
+                raise ValueError(f"Output splitting parameter must be greater than 1 if int (was given: {split})")
+        elif isinstance(split, list):
+            if all(i > 0 for i in split):
+                # split the dataset into the given chunks
+                # for example, split = [1, 3, 3] will split the data into 1/7, 3/7 and 3/7
+                self.split = []
+                self.split_ids = []
+                for idx, num in enumerate(split, start = 1):
+                    self.split += [f"{idx}_"] * num
+                    self.split_ids = [f"{idx}_"]
+                self.nsplit = len(self.split)
+            else:
+                raise ValueError(f"Output splitting parameters must all greater than 0 if list (was given: {split})")
         else:
-            self.splits = [""]
+            raise TypeError(f"Could not parse splitting parameter of type {type(split)}, must be None, int or list")
+
         self.logger.info("Initializing histograms...", stacklevel = 2)
         self._init_bins(bins)
         self._init_histograms(histograms)
@@ -114,15 +161,14 @@ class Output:
                 raise ValueError(f"Binning type {binning} invalid.")
 
     def _init_histograms(self, hists_cfg):
-        self.hists = {}
+        self.hists = Collection(nsplit = self.nsplit)
         # for now, doesn't support nested structures, but could in the future
-        for split in self.splits:
+        for split in self.split_ids:
             for tag, cfg in hists_cfg.items():
                 htype, name, title, *bin_names = cfg
                 self._validate_bin_names(bin_names)
                 tag = split + tag
                 name = split + name
-                title = split + title
                 # interlace number of bins and bin arrays for each axis
                 binnings = [val for name in bin_names for val in (self._nbins[name], self._bins[name])]
                 root_hist_cls = HISTOGRAM_REGISTRY[htype]
@@ -145,8 +191,8 @@ class Output:
         self.trees = {}
 
     def _init_responses(self, responses_cfg):
-        self.responses = {}
-        for split in self.splits:
+        self.responses = Collection(nsplit = self.nsplit)
+        for split in self.split_ids:
             for tag, cfg in responses_cfg.items():
                 rtype, name, title, *bin_names = cfg
                 self._validate_bin_names(bin_names)
@@ -185,9 +231,13 @@ class Output:
 
     def save(self, tfile):
         """Write output to an *already-opened* TFile."""
-        for hist in self.hists.values():
-            tfile.WriteTObject(hist)
+        self.hists.save(tfile)
+        self.responses.save(tfile)
         for tree in self.trees.values():
             tfile.WriteTObject(tree)
-        for resp in self.responses.values():
-            tfile.WriteTObject(resp)
+
+    def set_split(self, isplit):
+        isplit %= self.nsplit
+        split_id = self.split[isplit]
+        self.hists.set_split(split_id)
+        self.responses.set_split(split_id)

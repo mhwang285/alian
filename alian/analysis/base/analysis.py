@@ -94,6 +94,9 @@ class AnalysisBase:
         self.logger.info("Configuring output...")
         self.init_output()
         self.logger.info("Output configured.")
+        self.logger.info("Configuring output splitting...")
+        self.init_splitting()
+        self.logger.info("Output splitting configured.")
         # initialize analysis parameters
         self.logger.info("Configuring analysis parameters...")
         self.init_analysis(self.cfg.get('analysis', {}))
@@ -124,6 +127,16 @@ class AnalysisBase:
         self.trees = self.output.trees
         self.responses = self.output.responses
 
+    def init_splitting(self):
+        if self.output.nsplit > 0:
+            self.set_split = self._set_split
+        else:
+            self.set_split = self._set_split_ignore
+    def _set_split(self):
+        self.output.set_split(self.iev)
+    def _set_split_ignore(self):
+        return
+
     def analyze_events(self):
         self.logger.info("Analyzing events...")
         # slurm_check = is_slurm()
@@ -132,6 +145,7 @@ class AnalysisBase:
         for e in self.data_source.next_event(disable_bar = slurm_check):
             # build the event only
             self.build_event(e)
+            self.set_split()
             self.iev += 1
             # skip if the event doesn't pass the selection
             if not self.selector.event.selects(self.event):
