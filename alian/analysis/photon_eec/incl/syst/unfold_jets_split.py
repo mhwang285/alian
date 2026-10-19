@@ -22,31 +22,19 @@ alian = heppyy.load_cppyy("alian")
 
 
 class UnfoldJetsSplit(AnalysisMCBase):
-    _defaults = {
-        # 'pt_min_eec': 1.0,
-        "jet_matching": 0.6,
-        "pThat_scale_det": 1000,
-        "pThat_scale_gen": 1000,
-        "jet_pT_max_gen": 200,
-        "jet_pT_max_det": 200,
-        "split": 0.5,
-        "rng_seed": 5,
-    }
     def init_analysis(self, analysis_cfg: dict):
-        config = self._defaults | analysis_cfg
+        _defaults = {
+            "jet_matching": 0.6,
+            "pThat_scale_det": 1000,
+            "pThat_scale_gen": 1000,
+        }
+        config = _defaults | analysis_cfg
         for setting, value in config.items():
             setattr(self, setting, value)
-        self.eec_trk_selector = fj.SelectorPtMin(self.pt_min_eec)
-        self.jet_pT_max_det = self.hists["1_jet_pT_det"].GetXaxis().GetXmax()
-        self.jet_pT_max_gen = self.hists["1_jet_pT_gen"].GetXaxis().GetXmax()
-        self.analyze_event = self.analyze_event_split
-        if self.split == 0.5:
-            self.is_1 = True
-        else:
-            self.analyze_event = self.analyze_event_split
-            self.rng = np.random.default_rng(seed = self.rng_seed)
+        self.jet_pT_max_det = self.hists["jet_pT_det"].GetXaxis().GetXmax()
+        self.jet_pT_max_gen = self.hists["jet_pT_gen"].GetXaxis().GetXmax()
 
-    def analyze_event_split(self):
+    def analyze_event(self):
         pass_cut = True
         if self.jets_det and (self.jets_det[0].pt() / self.pThat) > self.pThat_scale_det:
             pass_cut = False
@@ -56,16 +44,10 @@ class UnfoldJetsSplit(AnalysisMCBase):
             self.logger.warning(f"Rejecting event: {len(self.jets_det)} det jets, {len(self.jets_gen)} gen jets")
             return
 
-        if self.is_1:
-            split = 1
-        else:
-            split = 2
-        self.is_1 = not self.is_1
-
         for j in self.jets_det:
-            self.hists[f'{split}_jet_pT_det'].Fill(j.pt(), self.weight)
+            self.hists['jet_pT_det'].Fill(j.pt(), self.weight)
         for j in self.jets_gen:
-            self.hists[f'{split}_jet_pT_gen'].Fill(j.pt(), self.weight)
+            self.hists['jet_pT_gen'].Fill(j.pt(), self.weight)
 
         # pairs_py = self._get_jet_matches(self.jets_det, self.jets_gen, 0.4*0.6)
         # pairs_cpp = self._get_jet_matches_cpp(self.jets_det, self.jets_gen, 0.4*self.jet_matching)
@@ -76,14 +58,14 @@ class UnfoldJetsSplit(AnalysisMCBase):
                                                 self.jet_pT_max_gen)
         pairs_cpp = [(p.first, p.second) for p in pairs_cpp]
 
-        resp = self.responses[f"{split}_jet_pT_unf"]
+        resp = self.responses["jet_pT_unf"]
         for idx_det, idx_gen in pairs_cpp:
             jet_det_matched = self.jets_det[idx_det]
             jet_gen_matched = self.jets_gen[idx_gen]
 
-            self.hists[f'{split}_jet_pT_gen_matched'].Fill(jet_gen_matched.pt(), self.weight)
-            self.hists[f'{split}_jet_pT_det_matched'].Fill(jet_det_matched.pt(), self.weight)
-            self.hists[f'{split}_jet_pT_resp'].Fill(jet_det_matched.pt(), jet_gen_matched.pt(), self.weight)
+            self.hists['jet_pT_gen_matched'].Fill(jet_gen_matched.pt(), self.weight)
+            self.hists['jet_pT_det_matched'].Fill(jet_det_matched.pt(), self.weight)
+            self.hists['jet_pT_resp'].Fill(jet_det_matched.pt(), jet_gen_matched.pt(), self.weight)
             resp.Fill(jet_det_matched.pt(), jet_gen_matched.pt(), self.weight)
 
         idxs_det_matched = [pair[0] for pair in pairs_cpp]

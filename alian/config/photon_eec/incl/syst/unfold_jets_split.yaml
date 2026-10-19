@@ -19,7 +19,7 @@ analysis:
   pThat_scale_gen: 6
 
 output:
-  split: true
+  split: 8
   bins:
     jet_pT: ['lin', 10, 150, 14]
     # RL: ['log', 1.0e-2, 0.4, 20]

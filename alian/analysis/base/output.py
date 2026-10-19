@@ -71,6 +71,8 @@ class Output:
             self.nsplit = 0
             self.split_ids = [""]
         elif isinstance(split, int):
+            if isinstance(split, bool):
+                split = 2
             if split > 1:
                 # split the dataset in a 1 : split - 1 ratio
                 # for example, split = 5 will split the data into 1/5 and 4/5
@@ -92,7 +94,7 @@ class Output:
             else:
                 raise ValueError(f"Output splitting parameters must all greater than 0 if list (was given: {split})")
         else:
-            raise TypeError(f"Could not parse splitting parameter of type {type(split)}, must be None, int or list")
+            raise TypeError(f"Could not parse splitting parameter of type {type(split)}, must be None, bool, int or list")
 
         self.logger.info("Initializing histograms...")
         self._init_bins(bins)
