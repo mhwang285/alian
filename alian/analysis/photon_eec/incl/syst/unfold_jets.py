@@ -22,20 +22,19 @@ alian = heppyy.load_cppyy("alian")
 
 
 class UnfoldJets(AnalysisMCBase):
-    _defaults = {
-        # 'pt_min_eec': 1.0,
-        "jet_matching": 0.6,
-        "pThat_scale_det": 1000,
-        "pThat_scale_gen": 1000,
-        "jet_pT_max_gen": 200,
-        "jet_pT_max_det": 200,
-    }
     def init_analysis(self, analysis_cfg: dict):
-        config = self._defaults | analysis_cfg
+        _defaults = {
+            "jet_matching": 0.6,
+            "pThat_scale_det": 1000,
+            "pThat_scale_gen": 1000,
+            "do_match_filter": False,
+        }
+        config = _defaults | analysis_cfg
         for setting, value in config.items():
             setattr(self, setting, value)
-        self.eec_trk_selector = fj.SelectorPtMin(self.pt_min_eec)
+        self.jet_pT_min_det = self.hists["jet_pT_det"].GetXaxis().GetXmin()
         self.jet_pT_max_det = self.hists["jet_pT_det"].GetXaxis().GetXmax()
+        self.jet_pT_min_gen = self.hists["jet_pT_gen"].GetXaxis().GetXmin()
         self.jet_pT_max_gen = self.hists["jet_pT_gen"].GetXaxis().GetXmax()
 
     def analyze_event(self):
@@ -57,9 +56,12 @@ class UnfoldJets(AnalysisMCBase):
         # pairs_cpp = self._get_jet_matches_cpp(self.jets_det, self.jets_gen, 0.4*self.jet_matching)
         # if pairs_py != pairs_cpp:
         #     raise ValueError(f"Pairs don't match:\n\tPython: {pairs_py}\n\tC++: {pairs_cpp}")
-        pairs_cpp = alian.get_jet_matches_filtered(self.jets_det, self.jets_gen, 0.4*self.jet_matching,
-                                                self.jet_pT_max_det,
-                                                self.jet_pT_max_gen)
+        pairs_cpp = alian.get_jet_matches(self.jets_det, self.jets_gen, 0.4*self.jet_matching,
+                                            self.do_match_filter,
+                                            self.jet_pT_min_det,
+                                            self.jet_pT_max_det,
+                                            self.jet_pT_min_gen,
+                                            self.jet_pT_max_gen)
         pairs_cpp = [(p.first, p.second) for p in pairs_cpp]
 
         resp = self.responses["jet_pT_unf"]
@@ -71,6 +73,7 @@ class UnfoldJets(AnalysisMCBase):
             self.hists['jet_pT_gen_matched'].Fill(jet_gen_matched.pt(), self.weight)
             self.hists['jet_pT_resp'].Fill(jet_det_matched.pt(), jet_gen_matched.pt(), self.weight)
             resp.Fill(jet_det_matched.pt(), jet_gen_matched.pt(), self.weight)
+            self.responses["jet_pT_unf_noep"].Fill(jet_det_matched.pt(), jet_gen_matched.pt(), self.weight)
 
         idxs_det_matched = [pair[0] for pair in pairs_cpp]
         idxs_fake = [idx for idx in range(len(self.jets_det)) if idx not in idxs_det_matched]
@@ -86,10 +89,12 @@ class UnfoldJets(AnalysisMCBase):
             resp.Miss(jet_miss.pt(), self.weight)
 
     def finalize(self):
-        pass
-        # hresponse = self.responses["jet_pT_unf"].Hresponse()
-        # hresponse.SetName("hresponse")
-        # self.responses["hresponse"] = hresponse
+        hresponse = self.responses["jet_pT_unf_noep"].Hresponse()
+        hresponse.SetName("hresponse_noep")
+        self.hists["hresponse_noep"] = hresponse
+        htruth = self.responses["jet_pT_unf_noep"].Htruth()
+        htruth.SetName("htruth_noep")
+        self.hists["htruth_noep"] = htruth
 
 
 if __name__ == '__main__':

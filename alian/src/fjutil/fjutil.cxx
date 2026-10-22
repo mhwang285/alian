@@ -25,7 +25,9 @@ namespace alian
 
 	std::vector<std::pair<int,int>> get_jet_matches(const std::vector<fastjet::PseudoJet>& jetsDet,
 									const std::vector<fastjet::PseudoJet>& jetsGen,
-									double r)
+									double r, bool doFilter = false,
+									double pTMinDet = 99999., double pTMaxDet = -1.0,
+									double pTMinGen = 99999., double pTMaxGen = -1.0)
 	{
 		const std::size_t nDet = jetsDet.size(), nGen = jetsGen.size();
 		const double r2 = r * r;
@@ -52,25 +54,21 @@ namespace alian
 		for (std::size_t iDet = 0; iDet < nDet; ++iDet)
 			if (countsDet[iDet] == 1 && countsGen[firstMatchInGen[iDet]] == 1)
 				matchIndices.emplace_back((int)iDet, firstMatchInGen[iDet]);
-		return matchIndices;
-	}
 
-	std::vector<std::pair<int,int>> get_jet_matches_filtered(const std::vector<fastjet::PseudoJet>& jetsDet,
-									const std::vector<fastjet::PseudoJet>& jetsGen,
-									double r, double pTMaxDet, double pTMaxGen)
-	{
-		std::vector<std::pair<int,int>> matchIndices = get_jet_matches(jetsDet, jetsGen, r);
-		// std::erase_if(matchIndices, [](std::pair<int,int> pair) { 
-		// 	return jetsDet[pair.first].pt() > pTMaxDet || jetsGen[pair.second].pt() > pTMaxGen;
-		// });
-		matchIndices.erase(
-			std::remove_if(
-				matchIndices.begin(), matchIndices.end(), [&jetsDet, &jetsGen, pTMaxDet, pTMaxGen](std::pair<int,int> pair) {
-					return jetsDet[pair.first].pt() > pTMaxDet || jetsGen[pair.second].pt() > pTMaxGen;
-				}
-			),
-			matchIndices.end()
-		);
+		if (doFilter) {
+			matchIndices.erase(
+				std::remove_if(
+					matchIndices.begin(), matchIndices.end(), [&jetsDet, &jetsGen, pTMinDet, pTMaxDet, pTMinGen, pTMaxGen](std::pair<int,int> pair) {
+						return jetsDet[pair.first].pt() < pTMinDet
+							|| jetsDet[pair.first].pt() > pTMaxDet
+							|| jetsGen[pair.second].pt() < pTMinGen
+							|| jetsGen[pair.second].pt() > pTMaxGen;
+					}
+				),
+				matchIndices.end()
+			);
+		}
+
 		return matchIndices;
 	}
 

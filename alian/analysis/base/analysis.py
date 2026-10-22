@@ -18,7 +18,7 @@ from .jet_finder import JetFinder
 from .logs import set_up_logger
 from .output import Output
 from .selector import AnalysisSelector
-from .utils import is_slurm, read_yaml, delta_R
+from .utils import delta_R, is_slurm, read_yaml
 
 alian = heppyy.load_cppyy("alian")
 
